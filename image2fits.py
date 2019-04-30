@@ -1,3 +1,12 @@
+'''
+    Script to convert radmc image.out files into FITS cubes.
+
+    Author: Dhruva Karkada, Spring 2019
+
+    Free to share, use, blah blah.
+    I take no responsibility for any errors that exist here.
+'''
+
 import argparse
 import numpy as np
 from astropy.io import fits

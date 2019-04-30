@@ -1,5 +1,5 @@
 '''
-    Module for analyzing moments of wavelength cubes.
+    Module for creating analyzing moments of wavelength cubes.
 
     Author: Aaron T. Lee, Spring/Summer 2018
             Dhruva Karkada, Spring 2019
