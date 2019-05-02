@@ -21,9 +21,26 @@ BOLTZMANN_CONST = 1.3806e-16
 LINE_CM = .2600757633465  # CO line peak wavelength
 
 
-# convert intensity cube to temperature cube
-def create_temp_cube(intensity_cube, camera_wavelengths):
-    # remember that RADMC outputs B_nu despite using wavelengths
+# read intensity cube from FITS and convert to temperature
+def get_temp_cube(fits_file):
+    header = {}
+    intensity_cube = camera_wavelengths = None
+    with fits.open(fits_file) as hdu_list:
+        # load image data
+        image_hdu = hdu_list[0]
+        for key, val in image_hdu.header.items():
+            header[key] = val
+        intensity_cube = image_hdu.data
+        # load wavelength data (in centimeters)
+        assert len(hdu_list) >= 0, "FITS must contain both image \
+                                    and wavelength data!"
+        camera_wavelengths = hdu_list[1].data["wavelengths"]
+
+        assert intensity_cube is not None, "Data not found."
+        assert camera_wavelengths is not None, "Wavelengths not found."
+
+    # convert intensity cube to temperature cube
+    # remember that RADMC outputs B_nu (despite using wavelengths..)
     def intensity_to_temp(intensity_nu, freq):
         return intensity_nu*pow(LIGHT_SPEED/freq, 2)/(2.0*BOLTZMANN_CONST)
     temp_cube = []
@@ -31,20 +48,21 @@ def create_temp_cube(intensity_cube, camera_wavelengths):
         freq = LIGHT_SPEED / camera_wavelengths[wave_ind]
         wave_image = intensity_to_temp(intensity_cube[wave_ind, :, :], freq)
         temp_cube.append(wave_image)
-    return np.array(temp_cube)
+
+    return header, camera_wavelengths, np.array(temp_cube)
 
 
-# Writes a moment map to a FITS file
-def save_moment_map(moment_map, outfile=None):
+# Writes a (moment) map to a FITS file
+def save_map(moment_map, outfile=None):
     if outfile is None:
         outfile = "{}-moment.fits".format(datetime.datetime.now().isoformat())
-    print("Saving moment map in FITS format to {}.".format(outfile))
+    print("Saving map in FITS format to {}.".format(outfile))
     hdu = fits.PrimaryHDU(moment_map)
     hdu.writeto(outfile, overwrite=True)
 
 
-# Reads in moment map from a FITS file
-def read_moment_map(infile="moment.fits"):
+# Reads in (moment) map from a FITS file
+def read_map(infile="moment.fits"):
     print("Reading {} as FITS.".format(infile))
     with fits.open(infile) as hdu_list:
         hdu = hdu_list[0]
@@ -68,7 +86,8 @@ def create_spectrum(data_cube, pixel=None, moment_map=None):
     if x >= dimx or x < 0 or y >= dimy or y < 0:
         raise ValueError("Index out of bound for this file: x={}, y={}, \
                             dim = ({},{})".format(x, y, dimx, dimy))
-    return data_cube[:, x, y]
+    # axes order is z, y, x
+    return data_cube[:, y, x]
 
 
 # creates doppler velocity (km/s) moment map
