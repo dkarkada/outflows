@@ -16,27 +16,6 @@ BOLTZMANN_CONST = 1.3806e-16
 LINE_CM = .2600757633465  # CO line peak wavelength
 
 
-def get_temp_cube(fits_file):
-    header = {}
-    data_cube = camera_wavelengths = None
-    with fits.open(fits_file) as hdu_list:
-        # load image data
-        image_hdu = hdu_list[0]
-        for key, val in image_hdu.header.items():
-            header[key] = val
-        data_cube = image_hdu.data
-        # load wavelength data (in centimeters)
-        assert len(hdu_list) >= 0, "FITS must contain both image \
-                                    and wavelength data!"
-        camera_wavelengths = hdu_list[1].data["wavelengths"]
-
-        assert data_cube is not None, "Data not found."
-        assert camera_wavelengths is not None, "Wavelengths not found."
-    temp_cube = mutil.create_temp_cube(data_cube, camera_wavelengths)
-
-    return header, camera_wavelengths, temp_cube
-
-
 def observer_outflow_mask(data_cube, camera_wavelengths):
     # convert wavelengths to doppler velocities
     velocities = LIGHT_SPEED * (camera_wavelengths - LINE_CM) / LINE_CM
@@ -48,44 +27,49 @@ def observer_outflow_mask(data_cube, camera_wavelengths):
     return bcastable_mask
 
 # Full cube moment maps
-head, wave, tempcube = get_temp_cube("full.fits")
+head, wave, tempcube = mutil.get_temp_cube("full.fits")
 moment0_map = mutil.create_moment_map(tempcube, wave, moment=0)
-mutil.save_moment_map(moment0_map, "full-mom0.fits")
+mutil.save_map(moment0_map, "full-mom0.fits")
 moment1_map = mutil.create_moment_map(tempcube, wave, moment=1)
 mean = mutil.normalize_map(moment1_map, moment0_map)
 moment2_map = mutil.create_moment_map(tempcube, wave, moment=2, mean=mean)
-mutil.save_moment_map(moment2_map, "full-mom2.fits")
+vrms_map = np.sqrt(mutil.normalize_map(moment2_map, moment0_map))
+mutil.save_map(vrms_map, "full-vrms.fits")
 
 # Tracer cells moment maps
-head, wave, tempcube = get_temp_cube("tracer.fits")
+head, wave, tempcube = mutil.get_temp_cube("tracer.fits")
 moment0_map = mutil.create_moment_map(tempcube, wave, moment=0)
-mutil.save_moment_map(moment0_map, "tracer-mom0.fits")
+mutil.save_map(moment0_map, "tracer-mom0.fits")
 moment2_map = mutil.create_moment_map(tempcube, wave, moment=2, mean=mean)
-mutil.save_moment_map(moment2_map, "tracer-mom2.fits")
+vrms_map = np.sqrt(mutil.normalize_map(moment2_map, moment0_map))
+mutil.save_map(vrms_map, "tracer-vrms.fits")
 
 # Non-tracer cells moment maps
-head, wave, tempcube = get_temp_cube("nontracer.fits")
+head, wave, tempcube = mutil.get_temp_cube("nontracer.fits")
 moment0_map = mutil.create_moment_map(tempcube, wave, moment=0)
-mutil.save_moment_map(moment0_map, "nontracer-mom0.fits")
+mutil.save_map(moment0_map, "nontracer-mom0.fits")
 moment2_map = mutil.create_moment_map(tempcube, wave, moment=2, mean=mean)
-mutil.save_moment_map(moment2_map, "nontracer-mom2.fits")
+vrms_map = np.sqrt(mutil.normalize_map(moment2_map, moment0_map))
+mutil.save_map(vrms_map, "nontracer-vrms.fits")
 
 # Observer's outflow moment maps
-head, wave, tempcube = get_temp_cube("full.fits")
+head, wave, tempcube = mutil.get_temp_cube("full.fits")
 mask = observer_outflow_mask(tempcube, wave)
 tempcube_outflow_masked = tempcube * mask
 obs_outflow0 = mutil.create_moment_map(tempcube_outflow_masked, wave, moment=0)
-mutil.save_moment_map(obs_outflow0, "obs-outflow-mom0.fits")
+mutil.save_map(obs_outflow0, "obs-outflow-mom0.fits")
 obs_outflow2 = mutil.create_moment_map(tempcube_outflow_masked, wave,
                                        moment=2, mean=mean)
-mutil.save_moment_map(obs_outflow2, "obs-outflow-mom2.fits")
+vrms_map = np.sqrt(mutil.normalize_map(obs_outflow2, obs_outflow0))
+mutil.save_map(vrms_map, "obs-outflow-vrms.fits")
 
 # Observer's non-outflow moment maps
 mask = np.logical_not(mask)
 tempcube_nonoutflow_masked = tempcube * mask
 obs_nonoutflow0 = mutil.create_moment_map(tempcube_nonoutflow_masked,
                                           wave, moment=0)
-mutil.save_moment_map(obs_nonoutflow0, "obs-nonoutflow-mom0.fits")
+mutil.save_map(obs_nonoutflow0, "obs-nonoutflow-mom0.fits")
 obs_nonoutflow2 = mutil.create_moment_map(tempcube_nonoutflow_masked,
                                           wave, moment=2, mean=mean)
-mutil.save_moment_map(obs_nonoutflow2, "obs-nonoutflow-mom2.fits")
+vrms_map = np.sqrt(mutil.normalize_map(obs_nonoutflow2, obs_nonoutflow0))
+mutil.save_map(vrms_map, "obs-nonoutflow-vrms.fits")
