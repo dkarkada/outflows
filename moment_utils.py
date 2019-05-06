@@ -47,6 +47,8 @@ def get_temp_cube(fits_file):
     for wave_ind in range(len(camera_wavelengths)):
         freq = LIGHT_SPEED / camera_wavelengths[wave_ind]
         wave_image = intensity_to_temp(intensity_cube[wave_ind, :, :], freq)
+        # zero below noise threshold of 1e-2
+        wave_image[wave_image < 1e-2] = 0
         temp_cube.append(wave_image)
 
     return header, camera_wavelengths, np.array(temp_cube)
@@ -87,7 +89,7 @@ def create_spectrum(data_cube, pixel=None, moment_map=None):
         raise ValueError("Index out of bound for this file: x={}, y={}, \
                             dim = ({},{})".format(x, y, dimx, dimy))
     # axes order is z, y, x
-    return data_cube[:, y, x]
+    return np.copy(data_cube[:, y, x])
 
 
 # creates doppler velocity (km/s) moment map
@@ -124,6 +126,19 @@ def create_moment_map(data_cube, camera_wavelengths, moment=0, mean=None):
 
 def normalize_map(moment_map, norm_map):
     print("Normalizing.")
-    assert moment_map.shape == norm_map.shape, "norm_map sized incorrectly"
+    assert moment_map.shape == norm_map.shape, "map sizes incompatible"
     norm_map += np.min(norm_map[np.nonzero(norm_map)]) / 1e6
     return moment_map / norm_map
+
+
+def create_mpe_maps(moment0_map, vrms_map, pixsz):
+    print("Creating mass, momentum, energy maps.")
+    assert moment0_map.shape == vrms_map.shape, "map sizes incompatible"
+    # convert to cgs
+    vrms_map *= 1e5
+    # conversion factor = X_CO * area * mean particle mass
+    alpha = 2e20 * pixsz**2 * (2.7*1.672e-24)
+    mass_map = alpha * moment0_map
+    momentum_map = mass_map * vrms_map
+    energy_map = 0.5 * mass_map * vrms_map**2
+    return mass_map, momentum_map, energy_map
