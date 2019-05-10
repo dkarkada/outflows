@@ -131,14 +131,15 @@ def normalize_map(moment_map, norm_map):
     return moment_map / norm_map
 
 
+# mass (Msun), momentum (Msun km/s), and energy (erg) plots
 def create_mpe_maps(moment0_map, vrms_map, pixsz):
     print("Creating mass, momentum, energy maps.")
     assert moment0_map.shape == vrms_map.shape, "map sizes incompatible"
-    # convert to cgs
-    vrms_map *= 1e5
+    # convert to cgs. P.S. don't use *= here, it'll modify in-place!
+    vrms_map = vrms_map * 1e5
     # conversion factor = X_CO * area * mean particle mass
     alpha = 2e20 * pixsz**2 * (2.7*1.672e-24)
     mass_map = alpha * moment0_map
     momentum_map = mass_map * vrms_map
     energy_map = 0.5 * mass_map * vrms_map**2
-    return mass_map, momentum_map, energy_map
+    return mass_map/2e33, momentum_map/(2e33*1e5), energy_map
