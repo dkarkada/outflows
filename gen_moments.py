@@ -33,6 +33,7 @@ mutil.save_map(moment0_map, "full-mom0.fits")
 moment1_map = mutil.create_moment_map(tempcube, wave, moment=1)
 mean = mutil.normalize_map(moment1_map, moment0_map)
 moment2_map = mutil.create_moment_map(tempcube, wave, moment=2, mean=mean)
+mutil.save_map(moment2_map, "full-mom2.fits")
 vrms_map = np.sqrt(mutil.normalize_map(moment2_map, moment0_map))
 mutil.save_map(vrms_map, "full-vrms.fits")
 
@@ -41,6 +42,7 @@ head, wave, tempcube = mutil.get_temp_cube("tracer.fits")
 moment0_map = mutil.create_moment_map(tempcube, wave, moment=0)
 mutil.save_map(moment0_map, "tracer-mom0.fits")
 moment2_map = mutil.create_moment_map(tempcube, wave, moment=2, mean=mean)
+mutil.save_map(moment2_map, "tracer-mom2.fits")
 vrms_map = np.sqrt(mutil.normalize_map(moment2_map, moment0_map))
 mutil.save_map(vrms_map, "tracer-vrms.fits")
 
@@ -49,6 +51,7 @@ head, wave, tempcube = mutil.get_temp_cube("nontracer.fits")
 moment0_map = mutil.create_moment_map(tempcube, wave, moment=0)
 mutil.save_map(moment0_map, "nontracer-mom0.fits")
 moment2_map = mutil.create_moment_map(tempcube, wave, moment=2, mean=mean)
+mutil.save_map(moment2_map, "nontracer-mom2.fits")
 vrms_map = np.sqrt(mutil.normalize_map(moment2_map, moment0_map))
 mutil.save_map(vrms_map, "nontracer-vrms.fits")
 
@@ -60,6 +63,7 @@ obs_outflow0 = mutil.create_moment_map(tempcube_outflow_masked, wave, moment=0)
 mutil.save_map(obs_outflow0, "obs-outflow-mom0.fits")
 obs_outflow2 = mutil.create_moment_map(tempcube_outflow_masked, wave,
                                        moment=2, mean=mean)
+mutil.save_map(obs_outflow2, "obs-outflow-mom2.fits")
 vrms_map = np.sqrt(mutil.normalize_map(obs_outflow2, obs_outflow0))
 mutil.save_map(vrms_map, "obs-outflow-vrms.fits")
 
@@ -71,5 +75,6 @@ obs_nonoutflow0 = mutil.create_moment_map(tempcube_nonoutflow_masked,
 mutil.save_map(obs_nonoutflow0, "obs-nonoutflow-mom0.fits")
 obs_nonoutflow2 = mutil.create_moment_map(tempcube_nonoutflow_masked,
                                           wave, moment=2, mean=mean)
+mutil.save_map(obs_nonoutflow2, "obs-nonoutflow-mom2.fits")
 vrms_map = np.sqrt(mutil.normalize_map(obs_nonoutflow2, obs_nonoutflow0))
 mutil.save_map(vrms_map, "obs-nonoutflow-vrms.fits")
